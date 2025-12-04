@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://vpic.nhtsa.dot.gov; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data:; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self';" />
+  <title>VIN Vision - Advanced Vehicle Decoder</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" nonce="vinAppNonce123"></script>
+</head>
+<body class="text-gray-100">
+  <header class="max-w-6xl mx-auto px-6 py-12">
+    <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+      <div class="space-y-4">
+        <p class="inline-flex items-center px-3 py-1 text-sm font-semibold tracking-wide rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-400/30">VIN Vision · Next-gen decoding</p>
+        <h1 class="text-4xl md:text-5xl font-black leading-tight">Decode any VIN in milliseconds, with insights built for professionals.</h1>
+        <p class="text-lg text-gray-300 max-w-2xl">VIN Vision connects directly to the National Highway Traffic Safety Administration (NHTSA) data services, enriches the decoded values with meaningful context, and gives you downloadable reports that are ready to share.</p>
+        <div class="flex flex-wrap gap-4 text-sm text-gray-300">
+          <div class="flex items-center gap-2"><span class="text-emerald-400">●</span> Live NHTSA API</div>
+          <div class="flex items-center gap-2"><span class="text-emerald-400">●</span> Extended detail view</div>
+          <div class="flex items-center gap-2"><span class="text-emerald-400">●</span> Downloadable reports</div>
+        </div>
+      </div>
+      <div class="glass rounded-3xl p-6 shadow-2xl border-l-4 border-emerald-500/60">
+        <p class="text-sm uppercase tracking-[0.3em] text-gray-400 mb-4">How it works</p>
+        <ol class="space-y-3 text-sm text-gray-300">
+          <li><span class="font-semibold text-gray-100">1.</span> Paste any 17-character VIN.</li>
+          <li><span class="font-semibold text-gray-100">2.</span> We decode via the official NHTSA endpoints.</li>
+          <li><span class="font-semibold text-gray-100">3.</span> View curated highlights & detailed tables.</li>
+          <li><span class="font-semibold text-gray-100">4.</span> Export the full report as a polished PDF file.</li>
+        </ol>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-6 pb-24">
+    <section class="glass rounded-3xl p-8 shadow-2xl">
+      <div class="flex flex-col gap-4 md:flex-row md:items-end">
+        <label class="flex-1">
+          <span class="text-sm font-semibold uppercase tracking-wide text-gray-400">Vehicle Identification Number</span>
+          <input id="vinInput" type="text" maxlength="17" placeholder="e.g. 1HGCM82633A004352" class="mt-2 w-full px-4 py-3 rounded-2xl bg-black/40 border border-white/10 focus:border-emerald-400 focus:outline-none focus:ring focus:ring-emerald-500/30 uppercase" />
+        </label>
+        <button id="decodeBtn" class="px-6 py-3 rounded-2xl bg-emerald-500 text-black font-semibold tracking-wide shadow-lg shadow-emerald-500/30 hover:bg-emerald-400 transition disabled:opacity-40 disabled:cursor-not-allowed">Decode VIN</button>
+        <button id="downloadBtn" class="px-6 py-3 rounded-2xl border border-white/20 text-gray-200 font-semibold tracking-wide hover:bg-white/10 transition disabled:opacity-40 disabled:cursor-not-allowed" disabled>Download Report</button>
+      </div>
+      <p class="mt-3 text-xs text-gray-500">When you export a report we generate a PDF on the fly—modern browsers let you pick a save location, while others send it straight to your downloads folder.</p>
+      <p id="statusMessage" class="mt-2 text-sm text-gray-400">Awaiting VIN input...</p>
+    </section>
+
+    <section class="mt-10 grid-auto-fit">
+      <div class="glass rounded-3xl p-6">
+        <p class="text-sm text-gray-400">Manufacturer</p>
+        <p id="manufacturer" class="text-2xl font-semibold mt-1">—</p>
+      </div>
+      <div class="glass rounded-3xl p-6">
+        <p class="text-sm text-gray-400">Model</p>
+        <p id="model" class="text-2xl font-semibold mt-1">—</p>
+      </div>
+      <div class="glass rounded-3xl p-6">
+        <p class="text-sm text-gray-400">Model Year</p>
+        <p id="modelYear" class="text-2xl font-semibold mt-1">—</p>
+      </div>
+      <div class="glass rounded-3xl p-6">
+        <p class="text-sm text-gray-400">Vehicle Type</p>
+        <p id="vehicleType" class="text-2xl font-semibold mt-1">—</p>
+      </div>
+    </section>
+
+    <section class="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div class="lg:col-span-2 glass rounded-3xl p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold">Detailed Attributes</h2>
+          <span class="text-sm text-gray-400" id="resultCount">0 fields</span>
+        </div>
+        <div class="overflow-hidden rounded-2xl border border-white/5">
+          <div class="max-h-[420px] overflow-auto">
+            <table class="min-w-full text-sm">
+              <tbody id="resultsTable" class="divide-y divide-white/5">
+                <tr>
+                  <td class="px-4 py-3 text-gray-500">No data yet. Decode a VIN to see the results.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="glass rounded-3xl p-6 flex flex-col">
+        <h2 class="text-xl font-semibold mb-4">Recent Lookups</h2>
+        <div id="historyList" class="space-y-3 text-sm text-gray-300">
+          <p>No lookups yet.</p>
+        </div>
+        <button id="clearHistory" class="mt-auto text-xs text-gray-400 hover:text-gray-200 underline decoration-dotted decoration-white/30">Clear history</button>
+      </div>
+    </section>
+
+    <section class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="glass rounded-3xl p-6">
+        <h3 class="text-lg font-semibold mb-2">Real-time validation</h3>
+        <p class="text-sm text-gray-400">We flag incomplete VINs and guard against malformed input before hitting the NHTSA endpoints, ensuring clean requests and faster responses.</p>
+      </div>
+      <div class="glass rounded-3xl p-6">
+        <h3 class="text-lg font-semibold mb-2">Insightful highlights</h3>
+        <p class="text-sm text-gray-400">Key specs—like manufacturer, fuel type, restraint system, and safety ratings—are surfaced instantly so you get answers at a glance.</p>
+      </div>
+      <div class="glass rounded-3xl p-6">
+        <h3 class="text-lg font-semibold mb-2">Share-ready reports</h3>
+        <p class="text-sm text-gray-400">Download a beautifully formatted PDF report for archival, client handoffs, or downstream integrations.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="text-center text-xs text-gray-500 pb-10">
+    Data courtesy of the NHTSA Vehicle Product Information Catalog (vPIC) API. Powered by VIN Vision.
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" referrerpolicy="no-referrer" nonce="vinAppNonce123"></script>
+
+  <script nonce="vinAppNonce123">
+    document.addEventListener('DOMContentLoaded', () => {
+      const vinInput = document.getElementById('vinInput');
+      const decodeBtn = document.getElementById('decodeBtn');
+      const downloadBtn = document.getElementById('downloadBtn');
+      const statusMessage = document.getElementById('statusMessage');
+      const manufacturerEl = document.getElementById('manufacturer');
+      const modelEl = document.getElementById('model');
+      const modelYearEl = document.getElementById('modelYear');
+      const vehicleTypeEl = document.getElementById('vehicleType');
+      const resultsTable = document.getElementById('resultsTable');
+      const resultCount = document.getElementById('resultCount');
+      const historyList = document.getElementById('historyList');
+      const clearHistoryBtn = document.getElementById('clearHistory');
+
+      if (!vinInput || !decodeBtn) {
+        console.error('VIN Vision: Critical elements are missing from the DOM.');
+        return;
+      }
+
+      let latestResult = null;
+
+      const formatLabel = (key) => key.replace(/([A-Z])/g, ' $1').replace(/\s+/g, ' ').trim();
+      const sanitizeValue = (value) => {
+        if (value === null || value === undefined) return '';
+        if (typeof value === 'string') return value.trim();
+        return String(value);
+      };
+      const getValue = (record, ...keys) => {
+        if (!record) return '';
+        for (const key of keys) {
+          const cleaned = sanitizeValue(record[key]);
+          if (cleaned && cleaned !== 'Not Applicable') {
+            return cleaned;
+          }
+        }
+        return '';
+      };
+      const getJsPDFLib = () => {
+        const jsPDFCtor = window.jspdf?.jsPDF;
+        if (!jsPDFCtor) {
+          throw new Error('PDF engine failed to initialize.');
+        }
+        return jsPDFCtor;
+      };
+
+      const createPdfBlob = (vin, data) => {
+        const JsPDF = getJsPDFLib();
+        const doc = new JsPDF({ unit: 'pt', format: 'a4' });
+        const margin = 48;
+        const lineHeight = 16;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        let y = margin;
+
+        const addNewPageIfNeeded = (extra = 0) => {
+          if (y + extra > pageHeight - margin) {
+            doc.addPage();
+            y = margin;
+          }
+        };
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(22);
+        doc.text('VIN Vision — Vehicle Intelligence Report', margin, y);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        y += lineHeight + 4;
+        doc.text(`Generated: ${new Date().toLocaleString()}`, margin, y);
+        y += lineHeight;
+        doc.text(`VIN: ${vin}`, margin, y);
+
+        y += lineHeight * 2;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(14);
+        doc.text('Quick Specs', margin, y);
+        doc.setFontSize(12);
+        y += lineHeight;
+
+        const summaryFields = [
+          ['Manufacturer', getValue(data, 'ManufacturerName', 'Manufacturer') || '—'],
+          ['Model', getValue(data, 'Model', 'ModelName') || '—'],
+          ['Model Year', getValue(data, 'ModelYear') || '—'],
+          ['Vehicle Type', getValue(data, 'VehicleType', 'VehicleTypeName') || '—'],
+        ];
+
+        summaryFields.forEach(([label, value]) => {
+          addNewPageIfNeeded(lineHeight);
+          doc.setFont('helvetica', 'bold');
+          doc.text(`${label}:`, margin, y);
+          doc.setFont('helvetica', 'normal');
+          doc.text(value || '—', margin + 130, y);
+          y += lineHeight;
+        });
+
+        y += lineHeight / 2;
+        addNewPageIfNeeded(lineHeight * 2);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(14);
+        doc.text('Decoded Attributes', margin, y);
+        doc.setFontSize(12);
+        y += lineHeight;
+
+        const entries = Object.entries(data)
+          .map(([key, value]) => [key, sanitizeValue(value)])
+          .filter(([key, value]) => value && value !== 'Not Applicable' && !['ErrorCode', 'ErrorText'].includes(key));
+
+        entries.forEach(([key, value]) => {
+          const label = formatLabel(key);
+          const lines = doc.splitTextToSize(value, pageWidth - margin * 2 - 150);
+          const blockHeight = lines.length * lineHeight;
+          addNewPageIfNeeded(blockHeight + lineHeight);
+          doc.setFont('helvetica', 'bold');
+          doc.text(label, margin, y);
+          doc.setFont('helvetica', 'normal');
+          doc.text(lines, margin + 150, y);
+          y += blockHeight + 6;
+        });
+
+        doc.setFont('helvetica', 'italic');
+        addNewPageIfNeeded(lineHeight * 2);
+        doc.text('Report generated via the official NHTSA vPIC API.', margin, pageHeight - margin);
+
+        return doc.output('blob');
+      };
+
+      const loadHistory = () => {
+        const saved = JSON.parse(localStorage.getItem('vinHistory') || '[]');
+        if (!saved.length) {
+          historyList.innerHTML = '<p>No lookups yet.</p>';
+          return;
+        }
+        historyList.innerHTML = '';
+        saved.slice(0, 5).forEach(item => {
+          const entry = document.createElement('button');
+          entry.className = 'flex flex-col w-full text-left p-3 rounded-2xl bg-white/5 hover:bg-white/10 transition';
+          entry.innerHTML = `<span class="font-semibold">${item.vin}</span><span class="text-xs text-gray-400">${item.date}</span>`;
+          entry.addEventListener('click', () => {
+            vinInput.value = item.vin;
+            latestResult = item.data;
+            renderResults(item.data, item.vin, false);
+            statusMessage.textContent = 'Loaded from history. You can refresh to fetch latest data.';
+            downloadBtn.disabled = false;
+          });
+          historyList.appendChild(entry);
+        });
+      };
+
+      const saveHistory = (vin, data) => {
+        const saved = JSON.parse(localStorage.getItem('vinHistory') || '[]');
+        saved.unshift({ vin, data, date: new Date().toLocaleString() });
+        localStorage.setItem('vinHistory', JSON.stringify(saved.slice(0, 20)));
+        loadHistory();
+      };
+
+      const renderResults = (data, vin, highlight = true) => {
+        if (!data) return;
+        latestResult = data;
+        const topFields = [
+          { keys: ['ManufacturerName', 'Manufacturer'], element: manufacturerEl },
+          { keys: ['Model', 'ModelName'], element: modelEl },
+          { keys: ['ModelYear'], element: modelYearEl },
+          { keys: ['VehicleType', 'VehicleTypeName'], element: vehicleTypeEl },
+        ];
+        topFields.forEach(({ keys, element }) => {
+          element.textContent = getValue(data, ...keys) || '—';
+        });
+
+        const entries = Object.entries(data)
+          .map(([key, value]) => [key, sanitizeValue(value)])
+          .filter(([key, value]) => value && value !== 'Not Applicable' && !['ErrorCode', 'ErrorText'].includes(key));
+
+        resultsTable.innerHTML = '';
+        const highlightFields = new Set(['ModelYear', 'ManufacturerName', 'Manufacturer', 'Model']);
+        entries.forEach(([key, value]) => {
+          const row = document.createElement('tr');
+          row.className = 'odd:bg-white/0 even:bg-white/5';
+          row.innerHTML = `
+            <td class="px-4 py-3 font-medium text-gray-200 whitespace-nowrap">${key.replace(/([A-Z])/g, ' $1').trim()}</td>
+            <td class="px-4 py-3 text-gray-300">${value}</td>
+          `;
+          if (highlight && highlightFields.has(key)) {
+            row.classList.add('bg-emerald-500/10');
+          }
+          resultsTable.appendChild(row);
+        });
+
+        resultCount.textContent = `${entries.length} fields`;
+        statusMessage.textContent = `Decoded VIN ${vin} successfully.`;
+        downloadBtn.disabled = false;
+      };
+
+      const setLoading = (isLoading) => {
+        decodeBtn.disabled = isLoading;
+        decodeBtn.textContent = isLoading ? 'Decoding...' : 'Decode VIN';
+      };
+
+      const fetchVin = async () => {
+        const vin = vinInput.value.trim().toUpperCase();
+        if (vin.length !== 17) {
+          statusMessage.textContent = 'VIN must be 17 characters. Please double-check and try again.';
+          return;
+        }
+        setLoading(true);
+        statusMessage.textContent = 'Contacting NHTSA vPIC service...';
+        try {
+          const url = `https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvaluesextended/${vin}?format=json`;
+          const response = await fetch(url);
+          if (!response.ok) throw new Error('Network response was not ok');
+          const data = await response.json();
+          const decoded = data.Results && data.Results[0];
+          if (!decoded) throw new Error('No results returned.');
+          if (decoded.ErrorCode && decoded.ErrorCode !== '0') {
+            throw new Error(decoded.ErrorText || 'VIN rejected by API.');
+          }
+          renderResults(decoded, vin);
+          saveHistory(vin, decoded);
+        } catch (error) {
+          console.error(error);
+          statusMessage.textContent = `Failed to decode VIN: ${error.message}`;
+          resultsTable.innerHTML = '<tr><td class="px-4 py-3 text-red-300">Unable to display data.</td></tr>';
+          downloadBtn.disabled = true;
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const downloadReport = async () => {
+        if (!latestResult) {
+          statusMessage.textContent = 'Decode a VIN before downloading a report.';
+          return;
+        }
+        const vin = vinInput.value.trim().toUpperCase() || 'vin-report';
+        let pdfBlob;
+
+        try {
+          pdfBlob = createPdfBlob(vin, latestResult);
+        } catch (error) {
+          console.error(error);
+          statusMessage.textContent = error.message || 'Unable to generate PDF. Please try again.';
+          return;
+        }
+
+        if (window.showSaveFilePicker) {
+          try {
+            const fileHandle = await window.showSaveFilePicker({
+              suggestedName: `${vin}-report.pdf`,
+              types: [
+                {
+                  description: 'VIN Vision PDF Report',
+                  accept: { 'application/pdf': ['.pdf'] },
+                },
+              ],
+            });
+            const writable = await fileHandle.createWritable();
+            await writable.write(pdfBlob);
+            await writable.close();
+            statusMessage.textContent = 'PDF report saved successfully.';
+            return;
+          } catch (error) {
+            if (error.name === 'AbortError') {
+              statusMessage.textContent = 'Save canceled.';
+              return;
+            }
+            console.error(error);
+            statusMessage.textContent = 'Unable to save report. Trying automatic download...';
+          }
+        }
+
+        const url = URL.createObjectURL(pdfBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${vin}-report.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        statusMessage.textContent = 'PDF report downloaded automatically (check your downloads folder).';
+      };
+
+      decodeBtn.addEventListener('click', fetchVin);
+      downloadBtn.addEventListener('click', downloadReport);
+      clearHistoryBtn.addEventListener('click', () => {
+        localStorage.removeItem('vinHistory');
+        loadHistory();
+        statusMessage.textContent = 'Lookup history cleared.';
+      });
+      vinInput.addEventListener('keyup', (event) => {
+        if (event.key === 'Enter') {
+          fetchVin();
+        }
+      });
+
+      loadHistory();
+    });
+  </script>
+</body>
+</html>
